@@ -4,6 +4,9 @@ from settings import *
 from ui import UI
 from wins import *
 import pygame
+import csv
+from datetime import datetime
+import os
 
 class Machine:
     def __init__(self):
@@ -44,6 +47,8 @@ class Machine:
         if not self.can_toggle and [self.reel_list[reel].reel_is_spinning for reel in self.reel_list].count(False) == 5:
             self.can_toggle = True
             self.spin_result = self.get_result()
+            self.log_spin_data()
+
 
             if self.check_wins(self.spin_result):
                 self.win_data = self.check_wins(self.spin_result)
@@ -108,6 +113,35 @@ class Machine:
         if hits:
             self.can_animate = True
             return hits
+
+    def log_spin_data(self):
+        import os
+        import csv
+        from datetime import datetime
+            
+        """Log every spin result for data analysis"""
+        # Make sure data folder exists
+
+        os.makedirs("data", exist_ok=True)
+
+        
+
+        data = {
+            "timestamp": datetime.now().isoformat(),
+            "player_balance": round(self.currPlayer.balance, 2),
+            "bet_size": self.currPlayer.bet_size,
+            "spin_result": str(self.spin_result),
+            "win_data": str(getattr(self, "win_data", None)),
+            "payout": self.currPlayer.last_payout if self.currPlayer.last_payout else 0,
+            "machine_balance": round(self.machine_balance, 2),
+        }
+
+        with open("data/spin_log.csv", "a", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=data.keys())
+            if f.tell() == 0:
+                writer.writeheader()
+            writer.writerow(data)
+
 
     def pay_player(self, win_data, curr_player):
         multiplier = 0
